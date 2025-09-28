@@ -1,0 +1,19 @@
+# Maven / Java build
+/target/
+**/target/
+*.log
+*.tmp
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Others
+.mvn/wrapper/maven-wrapper.jar
