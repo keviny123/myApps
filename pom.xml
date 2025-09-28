@@ -52,6 +52,12 @@
       <artifactId>h2</artifactId>
       <scope>test</scope>
     </dependency>
+    
+    <!-- Flyway for database migrations (runtime) -->
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-core</artifactId>
+    </dependency>
   </dependencies>
 
   <build>
