@@ -1,0 +1,5 @@
+* text=auto
+*.java text eol=lf
+*.md text
+*.xml text
+target/ export-ignore
