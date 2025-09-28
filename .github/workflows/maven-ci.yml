@@ -9,18 +9,21 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: customer_identity_db
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres" 
-          --health-interval 10s --health-timeout 5s --health-retries 5
+    strategy:
+      matrix:
+        db: [h2, postgres]
+    services: ${{ toJson(contains(matrix.db, 'postgres') && {
+      postgres: {
+        image: 'postgres:15',
+        env: {
+          POSTGRES_USER: 'postgres',
+          POSTGRES_PASSWORD: 'postgres',
+          POSTGRES_DB: 'customer_identity_db'
+        },
+        ports: ['5432:5432'],
+        options: "--health-cmd 'pg_isready -U postgres' --health-interval 10s --health-timeout 5s --health-retries 5"
+      }
+    } ) }}
 
     steps:
       - name: Checkout
@@ -33,11 +36,14 @@ jobs:
           java-version: '17'
           cache: 'maven'
 
-      - name: Wait for Postgres
+      - name: If postgres matrix, wait for Postgres
+        if: matrix.db == 'postgres'
         run: |
           for i in {1..30}; do
             pg_isready -h localhost -p 5432 -U postgres && break || sleep 1
           done
 
       - name: Build and test
+        env:
+          SPRING_PROFILES_ACTIVE: ${{ matrix.db == 'postgres' && 'dev' || 'test' }}
         run: mvn -B -DskipTests=false test
