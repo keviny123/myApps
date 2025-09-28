@@ -2,6 +2,8 @@
 
 Small Spring Boot REST service that stores simple customer identity data.
 
+![CI](https://github.com/keviny123/myApps/actions/workflows/maven-ci.yml/badge.svg)
+
 Quick start (build & run)
 
 1. Build with Maven (Windows PowerShell):
