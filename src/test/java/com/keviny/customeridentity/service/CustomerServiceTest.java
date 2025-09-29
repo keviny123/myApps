@@ -44,4 +44,29 @@ class CustomerServiceTest {
         assertEquals("Test", saved.getFirstName());
         verify(repository).save(any(CustomerIdentity.class));
     }
+
+    @Test
+    void createOrUpdate_updatesExistingWhenSsnFound() {
+        CustomerDto dto = new CustomerDto();
+        dto.setSsn("111-22-3333");
+        dto.setFirstName("UpdatedFirst");
+        dto.setLastName("UpdatedLast");
+
+        CustomerIdentity existingEntity = new CustomerIdentity();
+        existingEntity.setId(1L);
+        existingEntity.setSsn("111-22-3333");
+        existingEntity.setFirstName("OriginalFirst");
+        existingEntity.setLastName("OriginalLast");
+
+        when(repository.findBySsn(dto.getSsn())).thenReturn(Optional.of(existingEntity));
+        when(repository.save(any(CustomerIdentity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        CustomerIdentity saved = service.createOrUpdateCustomer(dto);
+
+        assertNotNull(saved);
+        assertEquals(1L, saved.getId()); // ID should be preserved
+        assertEquals("111-22-3333", saved.getSsn()); // SSN should be preserved
+        assertEquals("UpdatedFirst", saved.getFirstName()); // Name should be updated
+        verify(repository).save(existingEntity);
+    }
 }

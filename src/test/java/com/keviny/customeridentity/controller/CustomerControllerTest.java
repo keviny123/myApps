@@ -3,8 +3,8 @@ package com.keviny.customeridentity.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.keviny.customeridentity.dto.CustomerDto;
 import com.keviny.customeridentity.model.CustomerIdentity;
-import com.keviny.customeridentity.service.CustomerService;
 import com.keviny.customeridentity.repository.CustomerRepository;
+import com.keviny.customeridentity.service.CustomerService;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,7 +34,7 @@ class CustomerControllerTest {
     private CustomerService customerService;
 
     @MockBean
-    private CustomerRepository customerRepository;
+    private CustomerRepository customerRepository; // This mock is no longer used by the controller but kept for context if other tests need it.
 
     @Test
     void getById_returnsCustomer() throws Exception {
@@ -44,7 +44,7 @@ class CustomerControllerTest {
         entity.setLastName("Doe");
         entity.setSsn("111-22-3333");
 
-        when(customerRepository.findById(1L)).thenReturn(Optional.of(entity));
+        when(customerService.getCustomerById(1L)).thenReturn(Optional.of(entity));
 
         mockMvc.perform(get("/api/customers/1"))
                 .andExpect(status().isOk())
