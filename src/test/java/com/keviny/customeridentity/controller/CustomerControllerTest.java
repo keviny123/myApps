@@ -3,7 +3,6 @@ package com.keviny.customeridentity.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.keviny.customeridentity.dto.CustomerDto;
 import com.keviny.customeridentity.model.CustomerIdentity;
-import com.keviny.customeridentity.repository.CustomerRepository;
 import com.keviny.customeridentity.service.CustomerService;
 
 import org.junit.jupiter.api.Test;
@@ -17,6 +16,7 @@ import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -32,9 +32,6 @@ class CustomerControllerTest {
 
     @MockBean
     private CustomerService customerService;
-
-    @MockBean
-    private CustomerRepository customerRepository; // This mock is no longer used by the controller but kept for context if other tests need it.
 
     @Test
     void getById_returnsCustomer() throws Exception {
@@ -74,5 +71,25 @@ class CustomerControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(header().string("Location", "/api/customers/42"))
                 .andExpect(jsonPath("$.id").value(42));
+    }
+
+    @Test
+    void post_withInvalidDto_returnsBadRequest() throws Exception {
+        CustomerDto dto = new CustomerDto();
+        dto.setFirstName(""); // Invalid: first name is blank
+        dto.setSsn(null); // Invalid: ssn is null
+        dto.setDob(LocalDate.now().plusDays(1)); // Invalid: dob is in the future
+
+        mockMvc.perform(post("/api/customers")
+                .contentType("application/json")
+                .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Validation Failed"))
+                .andExpect(jsonPath("$.details.firstName").value("First name cannot be blank"))
+                .andExpect(jsonPath("$.details.lastName").value("Last name cannot be blank")) // Also invalid as it was never set
+                .andExpect(jsonPath("$.details.ssn").value("SSN cannot be blank"))
+                .andExpect(jsonPath("$.details.dob").value("Date of birth must be in the past"));
+
+        verifyNoInteractions(customerService);
     }
 }

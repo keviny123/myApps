@@ -7,6 +7,7 @@ import java.util.Optional;
 
 import com.keviny.customeridentity.model.CustomerIdentity;
 import com.keviny.customeridentity.dto.CustomerDto;
+import com.keviny.customeridentity.mapper.CustomerMapper;
 import com.keviny.customeridentity.repository.CustomerRepository;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.dao.DataIntegrityViolationException;
 
 class CustomerServiceTest {
 
@@ -35,8 +37,11 @@ class CustomerServiceTest {
         dto.setFirstName("Test");
         dto.setLastName("User");
 
-        when(repository.findBySsn(dto.getSsn())).thenReturn(Optional.empty());
-        when(repository.save(any(CustomerIdentity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        // The first save attempt is for a new entity
+        when(repository.save(any(CustomerIdentity.class))).thenAnswer(invocation -> {
+            CustomerIdentity saved = invocation.getArgument(0);
+            return saved;
+        });
 
         CustomerIdentity saved = service.createOrUpdateCustomer(dto);
 
@@ -58,8 +63,17 @@ class CustomerServiceTest {
         existingEntity.setFirstName("OriginalFirst");
         existingEntity.setLastName("OriginalLast");
 
+        // 1. First save call (the optimistic insert) throws a constraint violation
+        when(repository.save(any(CustomerIdentity.class)))
+            .thenThrow(new DataIntegrityViolationException("ssn_unique"))
+            .thenAnswer(invocation -> invocation.getArgument(0)); // 2. Second save call (the update) succeeds
+
+        // When the service retries, findBySsn should return the existing entity
         when(repository.findBySsn(dto.getSsn())).thenReturn(Optional.of(existingEntity));
-        when(repository.save(any(CustomerIdentity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // We need to ensure the mapper is called on the *existing* entity instance
+        CustomerIdentity expectedToSave = new CustomerIdentity();
+        CustomerMapper.toEntity(dto, expectedToSave);
 
         CustomerIdentity saved = service.createOrUpdateCustomer(dto);
 
@@ -67,6 +81,6 @@ class CustomerServiceTest {
         assertEquals(1L, saved.getId()); // ID should be preserved
         assertEquals("111-22-3333", saved.getSsn()); // SSN should be preserved
         assertEquals("UpdatedFirst", saved.getFirstName()); // Name should be updated
-        verify(repository).save(existingEntity);
+        verify(repository, times(2)).save(any(CustomerIdentity.class));
     }
 }

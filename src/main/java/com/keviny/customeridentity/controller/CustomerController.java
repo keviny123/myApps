@@ -3,7 +3,6 @@ package com.keviny.customeridentity.controller;
 import com.keviny.customeridentity.dto.CustomerDto;
 import com.keviny.customeridentity.mapper.CustomerMapper;
 import com.keviny.customeridentity.model.CustomerIdentity;
-import com.keviny.customeridentity.repository.CustomerRepository;
 import com.keviny.customeridentity.service.CustomerService;
 import org.springframework.http.ResponseEntity;
 import jakarta.validation.Valid;
